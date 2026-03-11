@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContainerLogs } from '@/components/container-logs';
 import { MetricsChart } from '@/components/metrics-chart';
 import { EnvVarsEditor } from '@/components/env-vars-editor';
+import { AppConfigEditor } from '@/components/app-config-editor';
 
 interface Container {
   Id: string;
@@ -230,9 +231,14 @@ export function ContainerStatusCard() {
                 )}
               </TabsContent>
               <TabsContent value="env">
-                <EnvVarsEditor
-                  appName={selectedContainer.Names[0]?.replace('/', '') ?? selectedContainer.Id.slice(0, 12)}
-                />
+                <div className="space-y-4">
+                  <AppConfigEditor
+                    appName={selectedContainer.Names[0]?.replace('/', '') ?? selectedContainer.Id.slice(0, 12)}
+                  />
+                  <EnvVarsEditor
+                    appName={selectedContainer.Names[0]?.replace('/', '') ?? selectedContainer.Id.slice(0, 12)}
+                  />
+                </div>
               </TabsContent>
             </Tabs>
           </DialogContent>

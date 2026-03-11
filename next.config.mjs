@@ -13,6 +13,9 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Avoid permission issues if a previous build wrote `.next/` as root.
+  // Using a different distDir keeps builds non-sudo and deterministic.
+  distDir: '.next-build',
   eslint: {
     ignoreDuringBuilds: true,
   },

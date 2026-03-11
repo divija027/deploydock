@@ -19,8 +19,9 @@ Lightweight **Docker container management + self-hosted deployment dashboard** b
 
 ```bash
 pnpm install
-pnpm dlx prisma migrate dev
-pnpm dlx prisma db seed
+pnpm prisma generate
+pnpm prisma migrate dev
+pnpm prisma db seed
 pnpm dev
 ```
 
@@ -57,4 +58,9 @@ When a push hits the repo’s default branch, DeployDock will:
 - build a Docker image
 - replace the running container named `<appName>`
 - stream build/deploy logs into Deploy History
+
+### Troubleshooting
+
+- **`next build` fails to delete `.next/`**: a previous run may have created root-owned files. This repo uses `distDir: '.next-build'` in `next.config.mjs` to avoid requiring sudo.
+- **Prisma client missing** (`Cannot find module '.prisma/client/default'`): run `pnpm prisma generate` (pnpm may skip some postinstall scripts by default).
 

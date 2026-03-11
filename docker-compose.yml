@@ -1,0 +1,17 @@
+services:
+  deploydock:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "file:/data/dev.db"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NEXTAUTH_SECRET: "change-me-please-change-me-please-change-me-32"
+      WEBHOOK_SECRET: "change-me"
+    volumes:
+      - deploydock-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  deploydock-data:
+

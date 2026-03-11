@@ -5,6 +5,7 @@
 
 # next.js
 /.next/
+/.next-build/
 /out/
 
 # production
@@ -20,6 +21,11 @@ yarn-error.log*
 .env
 .env.local
 .env.production
+
+# pnpm local stores/caches
+.pnpm-store/
+.pnpm-cache/
+.pnpm-home/
 
 # prisma
 prisma/dev.db
