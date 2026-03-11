@@ -67,6 +67,10 @@ When a push hits the repo’s default branch, DeployDock will:
 - replace the running container named `<appName>`
 - stream build/deploy logs into Deploy History
 
+Notes:
+
+- **Private repos**: `repoUrl` must be accessible from the DeployDock host/container (this demo assumes public HTTPS clones). For private repos, use a deploy token/credentialed URL or extend the deployer to support auth.
+
 ### Troubleshooting
 
 - **`next build` fails to delete `.next/`**: a previous run may have created root-owned files. This repo uses `distDir: '.next-build'` in `next.config.mjs` to avoid requiring sudo.
