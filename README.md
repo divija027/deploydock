@@ -43,6 +43,14 @@ This app talks to Docker via the Unix socket at `/var/run/docker.sock` (see `lib
 - Run on a host with Docker installed.
 - Ensure the user running the Next.js server can read/write the Docker socket (often by being in the `docker` group).
 
+### Run with Docker Compose
+
+`docker-compose.yml` mounts the Docker socket and runs database migrations + seeds the default admin user on startup.
+
+```bash
+docker compose up --build
+```
+
 ### GitHub webhook deploy
 
 1. Expose your DeployDock instance publicly (or via a tunnel).

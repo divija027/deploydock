@@ -11,6 +11,8 @@ services:
     volumes:
       - deploydock-data:/data
       - /var/run/docker.sock:/var/run/docker.sock
+    # Required for Docker socket access on most hosts.
+    user: "0:0"
 
 volumes:
   deploydock-data:

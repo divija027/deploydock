@@ -11,22 +11,25 @@ RUN pnpm install --frozen-lockfile
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm dlx prisma generate
+RUN pnpm prisma generate
 RUN pnpm build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
-
 COPY --from=build /app/public ./public
-COPY --from=build /app/.next ./.next
+COPY --from=build /app/.next-build ./.next-build
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/docker ./docker
 
 EXPOSE 3000
-USER nextjs
 
-CMD ["node", "node_modules/next/dist/bin/next", "start"]
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+CMD ["sh", "docker/entrypoint.sh"]
 
