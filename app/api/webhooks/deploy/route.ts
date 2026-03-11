@@ -6,8 +6,13 @@ import { buildAndDeploy } from '@/lib/docker/deploy';
 export async function POST(req: Request) {
   const body = await req.text();
   const signature = req.headers.get('x-hub-signature-256');
+  const secret = process.env.WEBHOOK_SECRET;
 
-  if (!verifyGitHubSignature(signature, body, process.env.WEBHOOK_SECRET!)) {
+  if (!secret) {
+    return new Response('WEBHOOK_SECRET is not configured', { status: 500 });
+  }
+
+  if (!verifyGitHubSignature(signature, body, secret)) {
     return new Response('Invalid signature', { status: 401 });
   }
 
