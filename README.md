@@ -6,6 +6,7 @@ Lightweight **Docker container management + self-hosted deployment dashboard** b
 
 - **Container lifecycle UI**: list / inspect / start / stop / restart / remove
 - **Real-time logs & metrics**: Server-Sent Events (SSE) streaming
+- **Live UI updates**: Docker Engine **events stream (SSE)** auto-refreshes containers + network graph
 - **Network visualization**: container-to-network graph
 - **Deployments**:
   - **GitHub webhook** triggers build + deploy on push

@@ -19,11 +19,36 @@ export function NetworkGraph() {
   const [data, setData] = useState<TopologyData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const refresh = () => {
     fetch('/api/docker/networks')
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    refresh();
+
+    const es = new EventSource('/api/docker/events');
+    let t: number | null = null;
+    const schedule = () => {
+      if (t) window.clearTimeout(t);
+      t = window.setTimeout(() => {
+        t = null;
+        refresh();
+      }, 500);
+    };
+
+    es.onmessage = (event) => {
+      const evt = JSON.parse(event.data);
+      if (evt?.Type === 'container' || evt?.Type === 'network') schedule();
+    };
+    es.onerror = () => es.close();
+
+    return () => {
+      es.close();
+      if (t) window.clearTimeout(t);
+    };
   }, []);
 
   useEffect(() => {
@@ -163,7 +188,7 @@ export function NetworkGraph() {
       </div>
 
       <button
-        onClick={() => fetch('/api/docker/networks').then(r => r.json()).then(setData)}
+        onClick={refresh}
         className="absolute top-3 right-3 z-10 text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded hover:bg-slate-700"
       >
         Refresh

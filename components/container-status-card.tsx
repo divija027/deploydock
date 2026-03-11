@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, RefreshCw, Play, Square, RotateCw, Trash2, FileText, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ export function ContainerStatusCard() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedContainer, setSelectedContainer] = useState<Container | null>(null);
+  const refreshTimerRef = useRef<number | null>(null);
 
   const fetchContainers = useCallback(async () => {
     try {
@@ -52,8 +53,32 @@ export function ContainerStatusCard() {
 
   useEffect(() => {
     fetchContainers();
-    const interval = setInterval(fetchContainers, 5000);
-    return () => clearInterval(interval);
+    const es = new EventSource('/api/docker/events');
+
+    const scheduleRefresh = () => {
+      if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = window.setTimeout(() => {
+        refreshTimerRef.current = null;
+        fetchContainers();
+      }, 350);
+    };
+
+    es.onmessage = (event) => {
+      const evt = JSON.parse(event.data);
+      const type = evt?.Type;
+      if (type === 'container' || type === 'image' || type === 'network') scheduleRefresh();
+    };
+    es.onerror = () => {
+      // Fall back to periodic refresh if events are unavailable
+      if (!refreshTimerRef.current) refreshTimerRef.current = window.setTimeout(fetchContainers, 2000);
+      es.close();
+    };
+
+    return () => {
+      es.close();
+      if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    };
   }, [fetchContainers]);
 
   const containerAction = async (id: string, action: string) => {
