@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ContainerLogs } from '@/components/container-logs';
 import { MetricsChart } from '@/components/metrics-chart';
 import { EnvVarsEditor } from '@/components/env-vars-editor';
 import { AppConfigEditor } from '@/components/app-config-editor';
+import { cn } from '@/lib/utils';
 
 interface Container {
   Id: string;
@@ -69,7 +72,6 @@ export function ContainerStatusCard() {
       if (type === 'container' || type === 'image' || type === 'network') scheduleRefresh();
     };
     es.onerror = () => {
-      // Fall back to periodic refresh if events are unavailable
       if (!refreshTimerRef.current) refreshTimerRef.current = window.setTimeout(fetchContainers, 2000);
       es.close();
     };
@@ -115,7 +117,7 @@ export function ContainerStatusCard() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
+              <Activity className="h-5 w-5 text-primary" />
               Container Status
             </CardTitle>
             <CardDescription>
@@ -128,7 +130,21 @@ export function ContainerStatusCard() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading containers...</div>
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
+                  <Skeleton className="w-2.5 h-2.5 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                  </div>
+                  <div className="flex gap-1">
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : containers.length === 0 ? (
             <div className="rounded-md border border-dashed p-8 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
@@ -150,7 +166,11 @@ export function ContainerStatusCard() {
                     key={c.Id}
                     className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
                   >
-                    <span className={`w-2.5 h-2.5 rounded-full ${stateColors[c.State] ?? 'bg-gray-500'}`} />
+                    <span className={cn(
+                      "w-2.5 h-2.5 rounded-full",
+                      stateColors[c.State] ?? 'bg-gray-500',
+                      c.State === 'running' && "animate-pulse-dot"
+                    )} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm truncate">{name}</span>
@@ -162,58 +182,78 @@ export function ContainerStatusCard() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => setSelectedContainer(c)}
-                        title="Details"
-                      >
-                        <FileText className="h-4 w-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => setSelectedContainer(c)}
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Details</TooltipContent>
+                      </Tooltip>
                       {c.State === 'running' ? (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          disabled={actionLoading === `${c.Id}-stop`}
-                          onClick={() => containerAction(c.Id, 'stop')}
-                          title="Stop"
-                        >
-                          <Square className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              disabled={actionLoading === `${c.Id}-stop`}
+                              onClick={() => containerAction(c.Id, 'stop')}
+                            >
+                              <Square className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Stop</TooltipContent>
+                        </Tooltip>
                       ) : (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          disabled={actionLoading === `${c.Id}-start`}
-                          onClick={() => containerAction(c.Id, 'start')}
-                          title="Start"
-                        >
-                          <Play className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              disabled={actionLoading === `${c.Id}-start`}
+                              onClick={() => containerAction(c.Id, 'start')}
+                            >
+                              <Play className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Start</TooltipContent>
+                        </Tooltip>
                       )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        disabled={actionLoading === `${c.Id}-restart`}
-                        onClick={() => containerAction(c.Id, 'restart')}
-                        title="Restart"
-                      >
-                        <RotateCw className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive"
-                        disabled={actionLoading === `${c.Id}-delete`}
-                        onClick={() => deleteContainer(c.Id)}
-                        title="Remove"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            disabled={actionLoading === `${c.Id}-restart`}
+                            onClick={() => containerAction(c.Id, 'restart')}
+                          >
+                            <RotateCw className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Restart</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive"
+                            disabled={actionLoading === `${c.Id}-delete`}
+                            onClick={() => deleteContainer(c.Id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Remove</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 );

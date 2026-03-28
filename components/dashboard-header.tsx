@@ -1,14 +1,16 @@
 'use client';
 import { DockIcon as Docker, Network, Rocket, LayoutDashboard, Images, LogOut, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { signOut } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/network', label: 'Network', icon: Network },
   { href: '/deployments', label: 'Deployments', icon: Rocket },
   { href: '/images', label: 'Images', icon: Images },
@@ -21,23 +23,31 @@ export function DashboardHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-10 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative">
       <div className="container mx-auto flex h-16 items-center px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2 mr-6">
-          <Docker className="h-6 w-6 text-blue-500" />
-          <h1 className="text-xl font-bold hidden sm:block">DeployDock</h1>
+        <Link href="/dashboard" className="flex items-center gap-2 mr-6">
+          <Docker className="h-6 w-6 text-primary" />
+          <h1 className="text-xl font-bold hidden sm:block">
+            <span className="text-primary">Deploy</span>Dock
+          </h1>
         </Link>
 
         <nav className="flex items-center gap-1">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href}>
               <Button
-                variant={pathname === href ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="gap-1.5"
+                className={cn(
+                  "gap-1.5 relative transition-colors duration-200",
+                  pathname === href && "text-primary"
+                )}
               >
                 <Icon className="h-4 w-4" />
                 <span className="hidden md:inline">{label}</span>
+                {pathname === href && (
+                  <span className="absolute -bottom-[13px] left-1/2 -translate-x-1/2 h-0.5 w-6 bg-primary rounded-full" />
+                )}
               </Button>
             </Link>
           ))}
@@ -49,26 +59,38 @@ export function DashboardHeader() {
               {session.user.name ?? session.user.email}
             </span>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              >
+                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Toggle theme</TooltipContent>
+          </Tooltip>
           {session && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => signOut({ callbackUrl: '/login' })}
-            >
-              <LogOut className="h-4 w-4 mr-1" />
-              <span className="hidden md:inline">Sign out</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  className="transition-colors duration-200"
+                >
+                  <LogOut className="h-4 w-4 mr-1" />
+                  <span className="hidden md:inline">Sign out</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Sign out</TooltipContent>
+            </Tooltip>
           )}
         </div>
       </div>
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
     </header>
   );
 }

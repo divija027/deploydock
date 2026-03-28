@@ -2,6 +2,9 @@
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import type { NetworkNode, NetworkLink, TopologyData } from '@/types/docker';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { RefreshCw } from 'lucide-react';
 
 const WIDTH = 800;
 const HEIGHT = 500;
@@ -176,23 +179,20 @@ export function NetworkGraph() {
     };
   }, [data]);
 
-  if (loading) return <div className="h-[500px] flex items-center justify-center text-muted-foreground">Loading network topology...</div>;
-  if (!data?.nodes.length) return <div className="h-[500px] flex items-center justify-center text-muted-foreground">No containers or networks found</div>;
+  if (loading) return <Skeleton className="h-[500px] w-full rounded-lg" />;
+  if (!data?.nodes.length) return <div className="h-[500px] flex items-center justify-center text-muted-foreground rounded-lg border border-dashed">No containers or networks found</div>;
 
   return (
-    <div className="relative border rounded-lg overflow-hidden bg-slate-950">
+    <div className="relative border border-primary/20 rounded-lg overflow-hidden bg-slate-950 shadow-lg shadow-primary/5">
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 text-xs text-slate-300">
         <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> Running</div>
         <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Stopped</div>
         <div className="flex items-center gap-1"><span className="w-3 h-3 rotate-45 bg-violet-600 inline-block" /> Network</div>
       </div>
 
-      <button
-        onClick={refresh}
-        className="absolute top-3 right-3 z-10 text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded hover:bg-slate-700"
-      >
-        Refresh
-      </button>
+      <Button size="sm" variant="outline" className="absolute top-3 right-3 z-10" onClick={refresh}>
+        <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Refresh
+      </Button>
 
       <svg ref={svgRef} width="100%" height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} />
     </div>

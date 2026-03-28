@@ -43,7 +43,7 @@ export function QuickStartCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Terminal className="h-5 w-5" />
+          <Terminal className="h-5 w-5 text-primary" />
           Quick Start
         </CardTitle>
         <CardDescription>Pull popular images with one click</CardDescription>

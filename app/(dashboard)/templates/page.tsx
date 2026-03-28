@@ -42,13 +42,15 @@ export default function TemplatesPage() {
     <div className="min-h-screen bg-background">
       <DashboardHeader />
       <main className="container mx-auto p-4 md:p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">App Templates</h1>
-          <p className="text-muted-foreground text-sm">
-            One-click deploy for popular self-hosted services
-          </p>
+        <div className="animate-fade-in-up">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold tracking-tight">App Templates</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              One-click deploy for popular self-hosted services
+            </p>
+          </div>
+          <TemplateGallery onSelect={handleDeploy} />
         </div>
-        <TemplateGallery onSelect={handleDeploy} />
       </main>
     </div>
   );

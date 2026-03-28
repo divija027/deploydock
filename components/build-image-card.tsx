@@ -63,7 +63,7 @@ export function BuildImageCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
+          <Package className="h-5 w-5 text-primary" />
           Pull Image
         </CardTitle>
         <CardDescription>Pull Docker images from Docker Hub</CardDescription>

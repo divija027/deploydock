@@ -25,8 +25,9 @@ export const authConfig: NextAuthConfig = {
       const isLoginPage = nextUrl.pathname === '/login';
       const isPublicApiRoute = nextUrl.pathname.startsWith('/api/auth');
       const isWebhookRoute = nextUrl.pathname.startsWith('/api/webhooks');
+      const isLandingPage = nextUrl.pathname === '/';
 
-      if (isPublicApiRoute || isWebhookRoute || isLoginPage) return true;
+      if (isPublicApiRoute || isWebhookRoute || isLoginPage || isLandingPage) return true;
       if (!isAuthenticated) return false;
       return true;
     },

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Play } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateGallery } from '@/components/template-gallery';
@@ -74,7 +75,7 @@ export function RunContainerCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Play className="h-5 w-5" />
+          <Play className="h-5 w-5 text-primary" />
           Run Container
         </CardTitle>
         <CardDescription>Create and start a new container</CardDescription>
@@ -127,9 +128,9 @@ export function RunContainerCard() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="env">Env Vars (one per line: KEY=value)</Label>
-              <textarea
+              <Textarea
                 id="env"
-                className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm font-mono"
+                className="font-mono"
                 placeholder="NODE_ENV=production"
                 value={envVars}
                 onChange={e => setEnvVars(e.target.value)}

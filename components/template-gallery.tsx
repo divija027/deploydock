@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface Props {
   onSelect?: (template: AppTemplate) => void;
@@ -19,34 +20,40 @@ export function TemplateGallery({ onSelect }: Props) {
     : TEMPLATES.filter(t => t.category === category);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-6">
+      <ToggleGroup
+        type="single"
+        value={category}
+        onValueChange={(v) => v && setCategory(v)}
+        className="flex flex-wrap gap-1"
+      >
         {CATEGORIES.map(cat => (
-          <Button
+          <ToggleGroupItem
             key={cat}
-            size="sm"
-            variant={category === cat ? 'default' : 'outline'}
-            onClick={() => setCategory(cat)}
-            className="capitalize"
+            value={cat}
+            className="capitalize rounded-full px-4 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
           >
             {cat}
-          </Button>
+          </ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filtered.map(t => (
+        {filtered.map((t, i) => (
           <Card
             key={t.id}
-            className="cursor-pointer hover:border-primary transition-colors"
+            className="cursor-pointer group hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-fade-in-up"
+            style={{ animationDelay: `${i * 50}ms` }}
             onClick={() => setPreview(t)}
           >
             <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{t.icon}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl p-2 rounded-lg bg-muted/50 group-hover:bg-primary/10 transition-colors">
+                  {t.icon}
+                </span>
                 <div>
                   <CardTitle className="text-base">{t.name}</CardTitle>
-                  <Badge variant="secondary" className="text-xs capitalize">{t.category}</Badge>
+                  <Badge variant="secondary" className="text-xs capitalize mt-1">{t.category}</Badge>
                 </div>
               </div>
             </CardHeader>
