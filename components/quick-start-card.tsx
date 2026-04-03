@@ -3,6 +3,16 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, Terminal, CheckCircle, Loader2 } from 'lucide-react';
+import { PullProgress } from '@/components/pull-progress';
+
+interface PullEvent {
+  status?: string;
+  id?: string;
+  progressDetail?: { current?: number; total?: number };
+  progress?: string;
+  error?: string;
+  done?: boolean;
+}
 
 const quickPulls = [
   { label: 'Pull nginx', image: 'nginx:alpine' },
@@ -14,9 +24,11 @@ const quickPulls = [
 export function QuickStartCard() {
   const [pulling, setPulling] = useState<string | null>(null);
   const [done, setDone] = useState<Set<string>>(new Set());
+  const [events, setEvents] = useState<PullEvent[]>([]);
 
   const pullImage = async (image: string) => {
     setPulling(image);
+    setEvents([]);
     try {
       const res = await fetch('/api/docker/images', {
         method: 'POST',
@@ -25,10 +37,22 @@ export function QuickStartCard() {
       });
 
       const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+
       if (reader) {
         while (true) {
-          const { done: readerDone } = await reader.read();
+          const { done: readerDone, value } = await reader.read();
           if (readerDone) break;
+          const text = decoder.decode(value);
+          const lines = text.split('\n').filter(l => l.startsWith('data: '));
+          for (const line of lines) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              setEvents(prev => [...prev, data]);
+            } catch {
+              // Skip malformed
+            }
+          }
         }
       }
       setDone(prev => new Set(prev).add(image));
@@ -69,6 +93,11 @@ export function QuickStartCard() {
             </Button>
           ))}
         </div>
+
+        {/* Show behind-the-scenes when pulling */}
+        {pulling && (
+          <PullProgress imageName={pulling} events={events} />
+        )}
       </CardContent>
     </Card>
   );

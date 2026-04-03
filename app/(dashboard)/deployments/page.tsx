@@ -6,8 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Rocket, RefreshCw, Webhook, User } from 'lucide-react';
+import {
+  Rocket,
+  RefreshCw,
+  Webhook,
+  User,
+  Info,
+  GitBranch,
+  Search,
+  Package,
+  Play,
+  CheckCircle2,
+  Loader2,
+  XCircle,
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Deployment {
   id: string;
@@ -31,6 +45,108 @@ const statusBorderColor: Record<string, string> = {
   failed: 'before:bg-red-500',
   building: 'before:bg-blue-500',
 };
+
+/* ── CI/CD Pipeline Explainer ──────────────────────────────── */
+
+const pipelineStages = [
+  {
+    id: 'webhook',
+    icon: Webhook,
+    label: 'Webhook Received',
+    concept: 'GitHub sends an HTTP POST to /api/webhooks/deploy with an HMAC-SHA256 signature. DeployDock verifies it using constant-time comparison to prevent timing attacks — this ensures the request really came from GitHub.',
+    color: 'text-violet-400',
+  },
+  {
+    id: 'clone',
+    icon: GitBranch,
+    label: 'Git Clone',
+    concept: 'DeployDock clones the repo\'s default branch into a temporary directory. This is a shallow clone (depth=1) to minimize bandwidth — we only need the latest commit, not the full history.',
+    color: 'text-cyan-400',
+  },
+  {
+    id: 'detect',
+    icon: Search,
+    label: 'Language Detection (Buildpack)',
+    concept: 'DeployDock scans the repo for signature files: package.json → Node.js, requirements.txt → Python, composer.json → PHP, index.html → static. Based on this, it generates a Dockerfile automatically — similar to Heroku\'s buildpack system.',
+    color: 'text-amber-400',
+  },
+  {
+    id: 'build',
+    icon: Package,
+    label: 'Docker Image Build',
+    concept: 'The generated Dockerfile is built using Docker\'s build API. Each instruction (FROM, COPY, RUN) creates a new layer. Docker caches unchanged layers, so rebuilds after small code changes are fast (only the COPY and RUN layers change).',
+    color: 'text-blue-400',
+  },
+  {
+    id: 'deploy',
+    icon: Play,
+    label: 'Hot-Swap Container',
+    concept: 'The old container is stopped gracefully (SIGTERM → wait → SIGKILL), then removed. A new container is created from the fresh image with the same port bindings and environment variables. This "blue-green" style swap minimizes downtime.',
+    color: 'text-green-400',
+  },
+];
+
+function PipelineExplainer({ status }: { status: string }) {
+  return (
+    <div className="rounded-lg border bg-card overflow-hidden mb-3">
+      <div className="px-3 py-2 border-b bg-muted/30 flex items-center gap-2">
+        <Rocket className="h-3.5 w-3.5 text-primary" />
+        <span className="text-xs font-semibold">CI/CD Pipeline — Behind the Scenes</span>
+      </div>
+      <div className="p-3 space-y-2.5">
+        {pipelineStages.map((stage, i) => {
+          const Icon = stage.icon;
+          const isDone = status === 'success' || (status === 'building' && i < 2);
+          const isActive = status === 'building' && (i === 2 || i === 3);
+          const isFailed = status === 'failed';
+
+          return (
+            <div key={stage.id}>
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "flex items-center justify-center h-5 w-5 rounded-full border transition-all",
+                  isDone && "border-green-500/50 bg-green-500/10 text-green-500",
+                  isActive && `${stage.color} border-current bg-current/10`,
+                  isFailed && i === pipelineStages.length - 1 && "border-red-500/50 bg-red-500/10 text-red-500",
+                  !isDone && !isActive && !isFailed && "border-border text-muted-foreground opacity-40",
+                )}>
+                  {isDone ? (
+                    <CheckCircle2 className="h-2.5 w-2.5" />
+                  ) : isActive ? (
+                    <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                  ) : isFailed && i === pipelineStages.length - 1 ? (
+                    <XCircle className="h-2.5 w-2.5" />
+                  ) : (
+                    <Icon className="h-2.5 w-2.5" />
+                  )}
+                </div>
+                <span className={cn(
+                  "text-[11px] font-medium",
+                  isDone && "text-green-500",
+                  isActive && stage.color,
+                  !isDone && !isActive && "text-muted-foreground opacity-50",
+                )}>
+                  {stage.label}
+                </span>
+              </div>
+              {(isDone || isActive) && (
+                <div className="ml-7 mt-1 rounded border border-primary/15 bg-primary/5 p-2 text-[10px]">
+                  <div className="flex items-center gap-1 font-semibold text-primary mb-0.5">
+                    <Info className="h-2.5 w-2.5" />
+                    How it works
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">{stage.concept}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Page ─────────────────────────────────────────────── */
 
 export default function DeploymentsPage() {
   const [deployments, setDeployments] = useState<Deployment[]>([]);
@@ -189,6 +305,9 @@ export default function DeploymentsPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
+                    {/* CI/CD Pipeline explainer */}
+                    <PipelineExplainer status={d.status} />
+
                     <div className="flex items-center justify-end mb-3">
                       <Button
                         size="sm"

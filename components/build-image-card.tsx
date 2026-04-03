@@ -1,21 +1,34 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Package } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ImageCombobox } from '@/components/image-combobox';
+import { PullProgress } from '@/components/pull-progress';
+
+interface PullEvent {
+  status?: string;
+  id?: string;
+  progressDetail?: { current?: number; total?: number };
+  progress?: string;
+  error?: string;
+  done?: boolean;
+}
 
 export function BuildImageCard() {
   const [imageName, setImageName] = useState('');
   const [pulling, setPulling] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [events, setEvents] = useState<PullEvent[]>([]);
+  const [showProgress, setShowProgress] = useState(false);
+  const pulledNameRef = useRef('');
 
   const pullImage = async () => {
     if (!imageName.trim()) return;
     setPulling(true);
-    setLogs([]);
+    setEvents([]);
+    setShowProgress(true);
+    pulledNameRef.current = imageName;
 
     try {
       const res = await fetch('/api/docker/images', {
@@ -36,16 +49,7 @@ export function BuildImageCard() {
           for (const line of lines) {
             try {
               const data = JSON.parse(line.slice(6));
-              if (data.done) {
-                setLogs(prev => [...prev, 'Pull complete!']);
-              } else if (data.error) {
-                setLogs(prev => [...prev, `Error: ${data.error}`]);
-              } else if (data.status) {
-                const msg = data.id
-                  ? `${data.id}: ${data.status}`
-                  : data.status;
-                setLogs(prev => [...prev.slice(-49), msg]);
-              }
+              setEvents(prev => [...prev, data]);
             } catch {
               // Skip malformed lines
             }
@@ -53,7 +57,7 @@ export function BuildImageCard() {
         }
       }
     } catch {
-      setLogs(prev => [...prev, 'Failed to pull image']);
+      setEvents(prev => [...prev, { error: 'Failed to pull image' }]);
     } finally {
       setPulling(false);
     }
@@ -70,25 +74,20 @@ export function BuildImageCard() {
       </CardHeader>
       <CardContent className="grid gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="image-name">Image Name</Label>
-          <Input
-            id="image-name"
-            placeholder="e.g. nginx:latest, postgres:16-alpine"
+          <Label>Image Name</Label>
+          <ImageCombobox
+            mode="registry"
             value={imageName}
-            onChange={e => setImageName(e.target.value)}
+            onValueChange={setImageName}
+            placeholder="Browse popular images or type any name..."
+            disabled={pulling}
           />
         </div>
         <Button className="w-full" onClick={pullImage} disabled={pulling || !imageName.trim()}>
           {pulling ? 'Pulling...' : 'Pull Image'}
         </Button>
-        {logs.length > 0 && (
-          <ScrollArea className="h-32 rounded-md border bg-black p-2">
-            <div className="text-xs font-mono text-green-400">
-              {logs.map((line, i) => (
-                <div key={i}>{line}</div>
-              ))}
-            </div>
-          </ScrollArea>
+        {showProgress && (
+          <PullProgress imageName={pulledNameRef.current} events={events} />
         )}
       </CardContent>
     </Card>

@@ -7,8 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, RefreshCw, Images, Search } from 'lucide-react';
+import { Trash2, RefreshCw, Images, Search, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface DockerImage {
@@ -28,6 +38,7 @@ export default function ImagesPage() {
   const [images, setImages] = useState<DockerImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<DockerImage | null>(null);
 
   const fetchImages = async () => {
     try {
@@ -40,8 +51,10 @@ export default function ImagesPage() {
 
   useEffect(() => { fetchImages(); }, []);
 
-  const deleteImage = async (id: string) => {
-    await fetch(`/api/docker/images/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteTarget(null);
+    await fetch(`/api/docker/images/${encodeURIComponent(deleteTarget.Id)}`, { method: 'DELETE' });
     fetchImages();
   };
 
@@ -154,7 +167,7 @@ export default function ImagesPage() {
                                 size="icon"
                                 variant="ghost"
                                 className="text-destructive h-8 w-8"
-                                onClick={() => deleteImage(img.Id)}
+                                onClick={() => setDeleteTarget(img)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -170,6 +183,37 @@ export default function ImagesPage() {
             </Card>
           )}
         </div>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Delete Image?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently remove{' '}
+                <span className="font-semibold text-foreground">
+                  {(deleteTarget?.RepoTags ?? ['<none>'])[0]}
+                </span>
+                {deleteTarget && (
+                  <span> ({formatSize(deleteTarget.Size)})</span>
+                )}
+                . You will need to pull it again from Docker Hub if you need it later.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={confirmDelete}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

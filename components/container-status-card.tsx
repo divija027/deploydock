@@ -1,10 +1,20 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, RefreshCw, Play, Square, RotateCw, Trash2, FileText, BarChart3 } from 'lucide-react';
+import { Activity, RefreshCw, Play, Square, RotateCw, Trash2, FileText, BarChart3, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,11 +43,21 @@ const stateColors: Record<string, string> = {
   dead: 'bg-red-800',
 };
 
+const stateDescriptions: Record<string, string> = {
+  running: 'Container is active and working normally',
+  exited: 'Container has stopped — click Start to resume',
+  paused: 'Container is frozen in place — click Start to resume',
+  created: 'Container was created but never started',
+  restarting: 'Container is restarting automatically...',
+  dead: 'Container crashed and cannot restart — try removing and recreating it',
+};
+
 export function ContainerStatusCard() {
   const [containers, setContainers] = useState<Container[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedContainer, setSelectedContainer] = useState<Container | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Container | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
 
   const fetchContainers = useCallback(async () => {
@@ -99,7 +119,10 @@ export function ContainerStatusCard() {
     }
   };
 
-  const deleteContainer = async (id: string) => {
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.Id;
+    setDeleteTarget(null);
     setActionLoading(`${id}-delete`);
     try {
       await fetch(`/api/docker/containers/${id}`, { method: 'DELETE' });
@@ -174,7 +197,14 @@ export function ContainerStatusCard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm truncate">{name}</span>
-                        <Badge variant="outline" className="text-xs">{c.State}</Badge>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs cursor-help">{c.State}</Badge>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px]">
+                            {stateDescriptions[c.State] ?? c.State}
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                       <div className="flex gap-2 text-xs text-muted-foreground mt-0.5">
                         <span className="truncate">{c.Image}</span>
@@ -247,7 +277,7 @@ export function ContainerStatusCard() {
                             variant="ghost"
                             className="h-8 w-8 text-destructive"
                             disabled={actionLoading === `${c.Id}-delete`}
-                            onClick={() => deleteContainer(c.Id)}
+                            onClick={() => setDeleteTarget(c)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -262,6 +292,37 @@ export function ContainerStatusCard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Container?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove{' '}
+              <span className="font-semibold text-foreground">
+                {deleteTarget?.Names[0]?.replace('/', '') ?? deleteTarget?.Id.slice(0, 12)}
+              </span>
+              {deleteTarget?.State === 'running' && (
+                <span className="text-destructive font-medium"> (currently running)</span>
+              )}
+              . Any data stored inside this container will be lost. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {selectedContainer && (
         <Dialog open onOpenChange={() => setSelectedContainer(null)}>
